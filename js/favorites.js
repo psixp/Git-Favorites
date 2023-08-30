@@ -1,41 +1,37 @@
-export class GithubUser {
-    static search(username) {
-        const endpoint = `https://api.github.com/users/${username}`
+import { GithubUser } from "./GithubUser.js"
 
-        return fetch(endpoint)
-            .then(data => data.json())
-            .then(({ login, name, public_repos, followers }) => ({
-                login,
-                name,
-                public_repos,
-                followers,
-            }))
-    }
-}
 
 // Classe da logica dos dados
 
-class Favorites {
+export class Favorites {
     constructor(root) {
         this.root = document.querySelector(root)
         this.load()
 
-        GithubUser.search('psixp').then(user => console.log(user))
+       /*  GithubUser.search('psixp').then(user => console.log(user)) */
     }
 
     load() {
 
         this.entries = JSON.parse(localStorage.getItem('@github-favorites:')) || []
-
+        /* localStorage.clear() */
 
     }
 
     save() {
-        localStorage.setItem('@github-favorites:', JSON.stringify(this,this.entries))
+        localStorage.setItem('@github-favorites:', JSON.stringify(this.entries))
     }
 
     async add(username) {
         try {
+
+            const userExists = this.entries.find(entry => entry.login === username)
+
+
+            if(userExists) {
+                throw new Error('Usuário já cadastrado!')
+            }
+
             const user = await GithubUser.search(username)
 
             if(user.login === undefined) {
@@ -73,6 +69,7 @@ export class FavoritesView extends Favorites {
 
         this.update()
         this.onadd()
+        
     }
 
     onadd() {
@@ -87,20 +84,20 @@ export class FavoritesView extends Favorites {
     update() {
         this.removeAllTr()
 
-        this.entries.forEach(user => {
-            console.log(user)
+        this.entries.forEach( user => {
             const row = this.createRow()
 
             row.querySelector('.user img').src = `https://github.com/${user.login}.png`
             row.querySelector('.user img').alt = `Imagem de ${user.name}`
             row.querySelector('.user p').textContent = user.name
+            row.querySelector('.user a').href = `https://github/com/${user.login}`
             row.querySelector('.user span').textContent = user.login
             row.querySelector('.repositories').textContent = user.public_repos
             row.querySelector('.followers').textContent = user.followers
 
             row.querySelector('.remove').onclick = () => {
-                const isOK = confirm('Tem certeza que deseja deletar essa linha ?')
-                if (isOK) {
+                const isOk = confirm('Tem certeza que deseja deletar essa linha ?')
+                if (isOk) {
                     this.delete(user)
                 }
             }
@@ -137,7 +134,8 @@ export class FavoritesView extends Favorites {
 
     removeAllTr() {
 
-        this.tbody.querySelectorAll('tr').forEach((tr) => {
+        this.tbody.querySelectorAll('tr')
+        .forEach((tr) => {
             tr.remove()
         });
     }
